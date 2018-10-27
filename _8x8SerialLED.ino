@@ -28,6 +28,7 @@ const byte CMD_GRN_COL7 = 0x3f;
 
 const byte CMD_SCR_DOWN = 0x40;
 const byte CMD_SCR_UP = 0x41;
+const byte CMD_CLR = 0x43;
 
 const byte READY = 0x27;
 
@@ -53,31 +54,19 @@ const byte HEART[] = {
   B00000000
 };
 
-byte data_red[] = {
-  0x00,
-  0x00,
-  0x00,
-  0x00,
-  0x00,
-  0x00,
-  0x00,
-  0x00
-};
-
-byte data_green[] = {
-  0x00,
-  0x00,
-  0x00,
-  0x00,
-  0x00,
-  0x00,
-  0x00,
-  0x00
-};
+byte data_red[8];
+byte data_green[8];
 
 int offset = 0;
 
 byte cmd = READY;
+
+void init_grid() {
+  for (int i = 0; i < 8; i++) {
+    data_red[i] = 0x00;
+    data_green[i] = 0x00;
+  }
+}
 
 void setup() {
 //Configure for common anode
@@ -147,7 +136,23 @@ void getData() {
       incomingByte = Serial.read();
       if (cmd == READY) {
         cmd = incomingByte;
+        //Handle single byte commands
+        if (cmd == CMD_SCR_DOWN) { 
+          offset += 1;
+          if (offset > 7) {
+            offset = 0;
+          }
+        } else if (cmd == CMD_SCR_UP) {
+          offset -= 1;
+          if (offset < 0) {
+            offset = 7;
+          }
+        } else if (cmd == CMD_CLR) {
+          offset = 0;
+          init_grid();
+        }
         break;
+      //Handle double byte commands
       } else if ((cmd >= CMD_RED_ROW0) and (cmd <= CMD_RED_ROW7)) { //CMD_RED_ROW
         Serial.print("RED ROW WRITE OK\n");
         writeRow(RED, cmd - CMD_RED_ROW0, incomingByte);
@@ -160,16 +165,6 @@ void getData() {
       } else if ((cmd >= CMD_GRN_COL0) and (cmd <= CMD_GRN_COL7)) { //CMD_GRN_COL
         writeCol(GREEN, cmd - CMD_GRN_COL0, incomingByte);
         Serial.print("GREEN COL WRITE OK\n");
-      } else if (cmd == CMD_SCR_DOWN) { 
-        offset += 1;
-        if (offset > 7) {
-          offset = 0;
-        }
-      } else if (cmd == CMD_SCR_UP) {
-        offset -= 1;
-        if (offset < 0) {
-          offset = 7;
-        }
       } else { //Command byte was invalid
         Serial.print("\nBad Command\n");
       }
