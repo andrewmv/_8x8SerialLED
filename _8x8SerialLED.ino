@@ -26,6 +26,9 @@ const byte CMD_GRN_ROW7 = 0x2f;
 const byte CMD_GRN_COL0 = 0x38;
 const byte CMD_GRN_COL7 = 0x3f;
 
+const byte CMD_SCR_DOWN = 0x40;
+const byte CMD_SCR_UP = 0x41;
+
 const byte READY = 0x27;
 
 const byte BIT[] = {
@@ -71,6 +74,8 @@ byte data_green[] = {
   0x00,
   0x00
 };
+
+int offset = 0;
 
 byte cmd = READY;
 
@@ -155,11 +160,29 @@ void getData() {
       } else if ((cmd >= CMD_GRN_COL0) and (cmd <= CMD_GRN_COL7)) { //CMD_GRN_COL
         writeCol(GREEN, cmd - CMD_GRN_COL0, incomingByte);
         Serial.print("GREEN COL WRITE OK\n");
+      } else if (cmd == CMD_SCR_DOWN) { 
+        offset += 1;
+        if (offset > 7) {
+          offset = 0;
+        }
+      } else if (cmd == CMD_SCR_UP) {
+        offset -= 1;
+        if (offset < 0) {
+          offset = 7;
+        }
       } else { //Command byte was invalid
         Serial.print("\nBad Command\n");
       }
       cmd = READY;
     }
+}
+
+int wrap(int x) {
+  if (x > 7) {
+    return x - 8;
+  } else {
+    return x;
+  }
 }
 
 void loop() {
@@ -181,10 +204,10 @@ void loop() {
 //Display buffer
   for (int y = 0; y < 8; y++) {
     for (int x = 0; x < 8; x++) {
-      if (data_red[y] & BIT[x]) {
+      if (data_red[y] & BIT[wrap(x+offset)]) {
         flash(x, y, RED);
       }
-      if (data_green[y] & BIT[x]) {
+      if (data_green[y] & BIT[wrap(x+offset)]) {
         flash(x, y, GREEN);
       }
     }
