@@ -134,6 +134,16 @@ void getData() {
     while (Serial.available() > 0) {
       // read the oldest byte in the serial buffer:
       incomingByte = Serial.read();
+      if (incomingByte == -1) {
+        Serial.print("Failed to read byte\n");
+        break;
+      }
+        Serial.print("\nCommand 0x");
+        Serial.print(cmd, HEX);
+        Serial.print(" 0b");
+        Serial.print(cmd, BIN);
+        Serial.print("\n");
+
       if (cmd == READY) {
         cmd = incomingByte;
         //Handle single byte commands
@@ -166,7 +176,11 @@ void getData() {
         writeCol(GREEN, cmd - CMD_GRN_COL0, incomingByte);
         Serial.print("GREEN COL WRITE OK\n");
       } else { //Command byte was invalid
-        Serial.print("\nBad Command\n");
+        Serial.print("\nBad Command Byte - 0x");
+        Serial.print(cmd, HEX);
+        Serial.print(" 0b");
+        Serial.print(cmd, BIN);
+        Serial.print("\n");
       }
       cmd = READY;
     }
